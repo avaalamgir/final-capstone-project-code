@@ -1,0 +1,314 @@
+#include <Servo.h>
+// Create a Servo object
+Servo myservoOne;
+#include <SoftwareSerial.h>
+// Define the pins for the software serial communication
+const int rxPin = 2;  // Receive pin
+const int txPin = 3;  // Transmit pin
+// Create a SoftwareSerial object
+SoftwareSerial mySerial(rxPin, txPin);
+#define IN1 A0
+#define IN2 A1
+#define IN3 A2
+#define IN4 A3
+#define ENA 5
+#define ENB 6
+#define TRIGGER_PIN 8
+#define ECHO_PIN 9
+bool manual = true;
+
+bool left = false;
+bool right = false;
+
+const int relayPin = 10;
+const int buzzer = 12;
+
+const int fire = 4;
+
+void setup() {
+  // Initialize the hardware serial communication for debugging
+  Serial.begin(9600);
+  while (!Serial) {
+    ;  // Wait for serial port to connect
+  }
+
+  // Initialize the software serial communication
+  mySerial.begin(9600);
+
+  //Initialise the Motor outpu pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(ENA, OUTPUT);
+  pinMode(ENB, OUTPUT);
+
+
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+
+  analogWrite(ENA, 220);
+  analogWrite(ENB, 220);
+
+  pinMode(TRIGGER_PIN, OUTPUT);  // Set trigger pin as output
+  pinMode(ECHO_PIN, INPUT);      // Set echo pin as input
+
+  Serial.println("");
+  delay(100);
+
+  myservoOne.attach(11);
+
+  myservoOne.write(90);
+
+  pinMode(relayPin, OUTPUT);
+  pinMode(buzzer, OUTPUT);
+
+  digitalWrite(relayPin, HIGH);
+  digitalWrite(buzzer, LOW);
+
+  pinMode(fire, INPUT);
+}
+
+void loop() {
+
+  if (digitalRead(fire) == LOW) {
+    Serial.println("Water Flow");
+    digitalWrite(relayPin, LOW);
+    digitalWrite(buzzer, HIGH);
+
+    for (int i = 40; i < 140; i++) {
+      myservoOne.write(i);
+      delay(5);  // Wait for 500 milliseconds
+    }
+    delay(300);
+    for (int i = 140; i > 40; i--) {
+      myservoOne.write(i);
+      delay(5);  // Wait for 500 milliseconds
+    }
+
+    delay(300);
+
+    for (int i = 40; i < 140; i++) {
+      myservoOne.write(i);
+      delay(5);  // Wait for 500 milliseconds
+    }
+    delay(300);
+    for (int i = 140; i > 40; i--) {
+      myservoOne.write(i);
+      delay(5);  // Wait for 500 milliseconds
+    }
+
+    delay(300);
+
+for (int i = 40; i < 90; i++) {
+      myservoOne.write(i);
+      delay(5);  // Wait for 500 milliseconds
+    }
+    //myservoOne.write(90);
+    delay(50);
+
+    digitalWrite(relayPin, HIGH);
+    digitalWrite(buzzer, LOW);
+  }
+
+ if (manual == false) {
+    digitalWrite(TRIGGER_PIN, LOW);
+    delayMicroseconds(2);
+
+    // Send a 10us pulse to the trigger pin
+    digitalWrite(TRIGGER_PIN, HIGH);
+    delayMicroseconds(10);
+    digitalWrite(TRIGGER_PIN, LOW);
+
+    // Measure the duration of the echo pulse
+    unsigned long duration = pulseIn(ECHO_PIN, HIGH);
+
+    // Calculate the distance based on the speed of sound (343 meters per second)
+    // Divide by 2 because the sound wave travels to the object and back
+    float distance = (duration * 0.0343) / 2.0;
+
+    Serial.println(distance);
+
+    if (distance > 2 && distance < 20) {
+      gobackturn();
+    } else {
+      analogWrite(ENA, 200);
+      analogWrite(ENB, 200);
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+    }
+  }
+
+  // Read data from software serial and send to hardware serial
+  if (mySerial.available()) {
+    char data = mySerial.read();
+    Serial.println(data);
+    Serial.println();
+
+    if (data == 'm') {
+      manual = true;
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+    } else if (data == 'a') {
+      manual = false;
+    } else if (data == 'w') {
+      Serial.println("Water Flow");
+      digitalWrite(relayPin, LOW);
+      digitalWrite(buzzer, HIGH);
+
+      for (int i = 40; i < 140; i++) {
+        myservoOne.write(i);
+        delay(5);  // Wait for 500 milliseconds
+      }
+      delay(300);
+      for (int i = 140; i > 40; i--) {
+        myservoOne.write(i);
+        delay(5);  // Wait for 500 milliseconds
+      }
+
+      delay(300);
+
+      for (int i = 40; i < 140; i++) {
+        myservoOne.write(i);
+        delay(5);  // Wait for 500 milliseconds
+      }
+      delay(300);
+      for (int i = 140; i > 40; i--) {
+        myservoOne.write(i);
+        delay(5);  // Wait for 500 milliseconds
+      }
+
+      delay(300);
+
+  for (int i = 40; i < 90; i++) {
+        myservoOne.write(i);
+        delay(5);  // Wait for 500 milliseconds
+      }
+      //myservoOne.write(90);
+      delay(50);
+
+      digitalWrite(relayPin, HIGH);
+      digitalWrite(buzzer, LOW);
+    } else if (data == 'f') {
+      analogWrite(ENA, 220);
+      analogWrite(ENB, 250);
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      delay(1000);
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+    } else if (data == 'b') {
+      analogWrite(ENA, 220);
+      analogWrite(ENB, 220);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      delay(1000);
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+    } else if (data == 'l') {
+      analogWrite(ENA, 230);
+      analogWrite(ENB, 230);
+      digitalWrite(IN1, HIGH);
+      digitalWrite(IN2, LOW);
+      digitalWrite(IN3, LOW);
+      digitalWrite(IN4, HIGH);
+      delay(1000);
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+    } else if (data == 'r') {
+      analogWrite(ENA, 230);
+      analogWrite(ENB, 230);
+      digitalWrite(IN1, LOW);
+      digitalWrite(IN2, HIGH);
+      digitalWrite(IN3, HIGH);
+      digitalWrite(IN4, LOW);
+      delay(1000);
+      analogWrite(ENA, 0);
+      analogWrite(ENB, 0);
+    }
+ char tempArray[2] = { data, '\0' };
+    int intValue = atoi(tempArray);
+    //int msg = data.toInt();
+    switch (intValue) {
+      case 1:
+        Serial.println("Forward");
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+        break;
+    
+     case 2:
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, HIGH);
+        digitalWrite(IN4, LOW);
+        break;
+      case 3:
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, HIGH);
+        digitalWrite(IN3, HIGH);
+        digitalWrite(IN4, LOW);
+        break;
+      case 4:
+        digitalWrite(IN1, HIGH);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, HIGH);
+        break;
+     case 5:
+        digitalWrite(IN1, LOW);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        digitalWrite(IN4, LOW);
+        break;
+      case 6:
+        analogWrite(ENA, 180);
+        analogWrite(ENB, 180);
+        break;
+      case 7:
+        analogWrite(ENA, 220);
+        analogWrite(ENB, 220);
+        break;
+      case 8:
+        analogWrite(ENA, 250);
+        analogWrite(ENB, 250);
+        break;
+    }
+  }
+}
+void gobackturn() {
+  Serial.println("Go back Trun");
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+  delay(1000);
+  analogWrite(ENA, 200);
+  analogWrite(ENB, 200);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, HIGH);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  delay(300);
+  analogWrite(ENA, 240);
+  analogWrite(ENB, 240);
+  digitalWrite(IN1, HIGH);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, HIGH);
+  delay(600);
+  analogWrite(ENA, 0);
+  analogWrite(ENB, 0);
+  digitalWrite(IN1, LOW);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, LOW);
+  delay(500);
+}  
